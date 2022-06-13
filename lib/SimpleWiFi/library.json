@@ -1,0 +1,16 @@
+{
+    "name": "SimpleWiFi",
+    "version": "1.0.0",
+    "description": "A simple library for handling WiFi connections",
+    "keywords": [
+        "ESP32",
+        "wifi",
+        "manager",
+        "wifi manager"
+    ],
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/CalinRadoni"
+    }
+}

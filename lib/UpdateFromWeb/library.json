@@ -1,0 +1,16 @@
+{
+    "name": "UpdateFromWeb",
+    "version": "1.0.0",
+    "description": "A simple library for updating from a Web Server",
+    "keywords": [
+        "ESP32",
+        "Update",
+        "OTA",
+        "HTTPS"
+    ],
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/CalinRadoni"
+    }
+}
