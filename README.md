@@ -16,3 +16,7 @@ In `platformio.ini` set `CORE_DEBUG_LEVEL` to a value according to `ARDUHAL_LOG_
 #define ARDUHAL_LOG_LEVEL_DEBUG      (4)
 #define ARDUHAL_LOG_LEVEL_VERBOSE    (5)
 ```
+
+## License
+
+This repository is licensed under the terms of [GNU GPLv3](http://www.gnu.org/licenses/gpl-3.0.html) license. See the `LICENSE-GPLv3.txt` file.
