@@ -8,11 +8,11 @@
 #include <ArduinoJson.h>
 
 #include "credentials.h"
-#include "esp_camera.h"
-#include "esp32cam_defs.h"
+#include "ESPCamera.h"
 
 SimpleWiFi simpleWiFi;
 UpdateFromWeb webUpdater;
+ESPCamera espCam;
 
 WiFiClientSecure securedClient;
 UniversalTelegramBot bot(botToken, securedClient);
@@ -284,28 +284,6 @@ void CheckTimes(void)
     }
 }
 
-bool InitializeCamera(void)
-{
-    if (ESP_OK != init_esp32_camera(psramFound())) {
-        log_e("Error: Camera initialization failed !");
-        return false;
-    }
-
-    sensor_t *camSensor = esp_camera_sensor_get();
-    if (camSensor != NULL) {
-        log_i("Camera settings: AWB %d, AWB gain %d, AGC %d, AGC gain %d, gain ceiling %d, AEC %d, AEC2 %d",
-            camSensor->status.awb,
-            camSensor->status.awb_gain,
-            camSensor->status.agc,
-            camSensor->status.agc_gain,
-            camSensor->status.gainceiling,
-            camSensor->status.aec,
-            camSensor->status.aec2);
-    }
-
-    return true;
-}
-
 void setup()
 {
     Serial.begin(115200);
@@ -327,9 +305,12 @@ void setup()
     pinMode(pinFlashLED, OUTPUT);
     digitalWrite(pinFlashLED, LOW);
 
-    bool cameraInitialized = InitializeCamera();
-
-    // init any I2C after working with camera settings !
+    bool usePSRAM = psramFound();
+    if (ESP_OK != espCam.Initialize(usePSRAM)) {
+        log_e("Error: Camera initialization failed !");
+        espCam.Deinit();
+        espCam.Initialize(usePSRAM);
+    }
 
     while (!simpleWiFi.IsConnected()) { delay(10); }
 
@@ -342,13 +323,11 @@ void setup()
 
     bot.sendMessage(chatID, "I am alive !", "");
 
-    if (!cameraInitialized) {
-        cameraInitialized = InitializeCamera();
-        if (!cameraInitialized) {
-            bot.sendMessage(chatID, "Camera initialization failed !", "");
-            delay(1000);
-            ESP.restart();
-        }
+    if (espCam.IsInitialized()) {
+        espCam.PrintCameraInfo();
+    }
+    else {
+        bot.sendMessage(chatID, "Camera initialization failed !", "");
     }
 
     timeOfLastMessage = millis();

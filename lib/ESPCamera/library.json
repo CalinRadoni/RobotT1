@@ -1,0 +1,15 @@
+{
+    "name": "ESPCamera",
+    "version": "1.0.0",
+    "description": "A simple library for cameras on ESP32-camera boards",
+    "keywords": [
+        "ESP32",
+        "esp32-camera",
+        "esp32-cam"
+    ],
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/CalinRadoni"
+    }
+}
