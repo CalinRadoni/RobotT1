@@ -226,8 +226,10 @@ void handleMessage(int idx)
     }
 
     if (userCmd == "/update") {
+        bot.sendMessage(bot.messages[idx].chat_id, "Updating ... ", "");
         if (webUpdater.UpdateFromLink(userData)) {
             bot.sendMessage(bot.messages[idx].chat_id, "Update OK", "");
+            bot.sendMessage(bot.messages[idx].chat_id, "restarting...", "");
             log_i("Update OK");
             restartRequired = 3000;
         }
