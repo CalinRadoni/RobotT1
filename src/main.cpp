@@ -46,6 +46,18 @@ const char *helpMessage =
     "/reset\n" \
     "/update URL";
 
+void ResetBoard(uint32_t delayMS)
+{
+    log_i("Resetting the board");
+
+    espCam.Deinit();
+
+    if (delayMS > 0) {
+        delay(delayMS);
+    }
+    ESP.restart();
+}
+
 void SendTelegramMessage() {
     snprintf(sbuffer, sBuffSize, "MC: %d", motionCount);
 //    bot.sendMessage(chatID, sbuffer, "");
@@ -207,14 +219,14 @@ void handleMessage(int idx)
 
     if (userCmd == "/reset") {
         bot.sendMessage(bot.messages[idx].chat_id, "restarting...", "");
-        delay(1000);
-        ESP.restart();
+        ResetBoard(2000);
     }
 
     if (userCmd == "/update") {
         if (webUpdater.UpdateFromLink(userData)) {
             bot.sendMessage(bot.messages[idx].chat_id, "Update OK", "");
             log_i("Update OK");
+            ResetBoard(2000);
         }
         else {
             bot.sendMessage(bot.messages[idx].chat_id, "Update failed !", "");
@@ -336,7 +348,7 @@ void setup()
 void loop()
 {
     if ((millis() - timeOfLastMessage) >= timeRestartAfter) {
-        ESP.restart();
+        ResetBoard(1000);
     }
 
     simpleWiFi.CheckConnection(true);
