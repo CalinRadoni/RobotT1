@@ -43,16 +43,17 @@ void ESPCamera::InitializeConfig(void)
     // cameraConfig.xclk_freq_hz = 20000000;
     cameraConfig.xclk_freq_hz = 10000000;
 
-    cameraConfig.ledc_timer = LEDC_TIMER_0;
+    cameraConfig.ledc_timer   = LEDC_TIMER_0;
     cameraConfig.ledc_channel = LEDC_CHANNEL_0;
-    cameraConfig.pixel_format = PIXFORMAT_JPEG;  // YUV422, GRAYSCALE, RGB565, JPEG
-    cameraConfig.frame_size = FRAMESIZE_UXGA;    // QQVGA-UXGA Do not use sizes above QVGA when not JPEG
-    cameraConfig.jpeg_quality = 8;               // 0 - 63 lower number means higher quality
-    cameraConfig.fb_count = 1;                   // if more than one, i2s runs in continuous mode. Use only with JPEG
-    cameraConfig.grab_mode = CAMERA_GRAB_LATEST; // also, CAMERA_GRAB_WHEN_EMPTY
+
+    cameraConfig.pixel_format = PIXFORMAT_JPEG;     // YUV422, GRAYSCALE, RGB565, JPEG
+    cameraConfig.frame_size   = FRAMESIZE_UXGA;     // QQVGA-UXGA Do not use sizes above QVGA when not JPEG
+    cameraConfig.jpeg_quality = 8;                  // 0 - 63 lower number means higher quality
+    cameraConfig.fb_count     = 1;                  // if more than one, i2s runs in continuous mode. Use only with JPEG
+    cameraConfig.grab_mode    = CAMERA_GRAB_LATEST; // also, CAMERA_GRAB_WHEN_EMPTY
 }
 
-esp_err_t ESPCamera::Initialize(bool usePSRAM)
+bool ESPCamera::Initialize(bool usePSRAM)
 {
     if (initialized) {
         Deinit();
@@ -70,8 +71,10 @@ esp_err_t ESPCamera::Initialize(bool usePSRAM)
     }
 
     esp_err_t err = esp_camera_init(&cameraConfig);
+    if (ESP_OK != err) {
+        ESP_LOGD(TAG, "esp_camera_init error %d: %s", err, esp_err_to_name(err));
+    }
     initialized = (ESP_OK == err);
-
     return initialized;
 }
 
@@ -88,9 +91,9 @@ bool ESPCamera::Reset(void)
     gpio_config(&conf);
 
     gpio_set_level((gpio_num_t)cameraConfig.pin_reset, 0);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
     gpio_set_level((gpio_num_t)cameraConfig.pin_reset, 1);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
 
     return true;
 }
@@ -108,7 +111,7 @@ bool ESPCamera::PowerDown(void)
     gpio_config(&conf);
 
     gpio_set_level((gpio_num_t)cameraConfig.pin_pwdn, 1);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     return true;
 }

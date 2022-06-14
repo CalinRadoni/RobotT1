@@ -26,6 +26,8 @@ char sbuffer[sBuffSize];
 unsigned long timeOfLastMessage;
 unsigned long timeRestartAfter = 2 * 86400000UL; // 48 hours
 
+uint32_t restartRequired = 0;
+
 int prevMinute = -1;
 bool timeForTelegram = false;
 
@@ -219,14 +221,15 @@ void handleMessage(int idx)
 
     if (userCmd == "/reset") {
         bot.sendMessage(bot.messages[idx].chat_id, "restarting...", "");
-        ResetBoard(2000);
+        restartRequired = 3000;
+        return;
     }
 
     if (userCmd == "/update") {
         if (webUpdater.UpdateFromLink(userData)) {
             bot.sendMessage(bot.messages[idx].chat_id, "Update OK", "");
             log_i("Update OK");
-            ResetBoard(2000);
+            restartRequired = 3000;
         }
         else {
             bot.sendMessage(bot.messages[idx].chat_id, "Update failed !", "");
@@ -254,8 +257,7 @@ void printLocalTime()
     struct tm timeInfo;
     if (!getLocalTime(&timeInfo)) {
         log_e("Failed to obtain time");
-        delay(1000);
-        ESP.restart();
+        restartRequired = 1000;
         return;
     }
 
@@ -318,10 +320,12 @@ void setup()
     digitalWrite(pinFlashLED, LOW);
 
     bool usePSRAM = psramFound();
-    if (ESP_OK != espCam.Initialize(usePSRAM)) {
-        log_e("Error: Camera initialization failed !");
+    if (!espCam.Initialize(usePSRAM)) {
+        log_e("Camera initialization failed !");
         espCam.Deinit();
-        espCam.Initialize(usePSRAM);
+        if (!espCam.Initialize(usePSRAM)) {
+            log_e("Camera reinitialization failed !");
+        }
     }
 
     while (!simpleWiFi.IsConnected()) { delay(10); }
@@ -342,13 +346,14 @@ void setup()
         bot.sendMessage(chatID, "Camera initialization failed !", "");
     }
 
+    restartRequired = 0;
     timeOfLastMessage = millis();
 }
 
 void loop()
 {
     if ((millis() - timeOfLastMessage) >= timeRestartAfter) {
-        ResetBoard(1000);
+        restartRequired = 1000;
     }
 
     simpleWiFi.CheckConnection(true);
@@ -374,6 +379,12 @@ void loop()
     while (msgCnt > 0) {
         handleMessages(msgCnt);
         msgCnt = bot.getUpdates(bot.last_message_received + 1);
+    }
+
+    // reseting the board when handling Telegram messages may screw the handling mechanism
+    // reset here if requested
+    if (restartRequired > 0) {
+        ResetBoard(restartRequired);
     }
 
     yield();

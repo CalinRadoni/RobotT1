@@ -10,7 +10,7 @@ public:
 
     void InitializeConfig(void);
 
-    esp_err_t Initialize(bool usePSRAM);
+    bool Initialize(bool usePSRAM);
 
     bool Reset(void);
     bool PowerDown(void);
