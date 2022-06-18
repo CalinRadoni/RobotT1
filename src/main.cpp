@@ -182,6 +182,7 @@ void handleMessage(int idx)
     String text = bot.messages[idx].text;
     String msg;
     String userCmd, userData;
+    String chatID;
 
     text.trim();
     int index = text.indexOf(' ');
@@ -194,14 +195,16 @@ void handleMessage(int idx)
         userData = text.substring(index + 1);
     }
 
+    chatID = bot.messages[idx].chat_id;
+
     if (userCmd == "/help") {
-        bot.sendMessage(bot.messages[idx].chat_id, helpMessage, "");
+        bot.sendMessage(chatID, helpMessage, "");
         return;
     }
 
     if (userCmd == "/ping") {
         msg = "pong " + bot.messages[idx].from_name;
-        bot.sendMessage(bot.messages[idx].chat_id, msg, "");
+        bot.sendMessage(chatID, msg, "");
         return;
     }
 
@@ -211,36 +214,36 @@ void handleMessage(int idx)
     }
 
     if (userCmd == "/photo") {
-        sendPhoto(bot.messages[idx].chat_id, false);
+        sendPhoto(chatID, false);
         return;
     }
     if (userCmd == "/photof") {
-        sendPhoto(bot.messages[idx].chat_id, true);
+        sendPhoto(chatID, true);
         return;
     }
 
     if (userCmd == "/reset") {
-        bot.sendMessage(bot.messages[idx].chat_id, "restarting...", "");
+        bot.sendMessage(chatID, "restarting...", "");
         restartRequired = 3000;
         return;
     }
 
     if (userCmd == "/update") {
-        bot.sendMessage(bot.messages[idx].chat_id, "Updating ... ", "");
+        bot.sendMessage(chatID, "Updating ... ", "");
         if (webUpdater.UpdateFromLink(userData)) {
-            bot.sendMessage(bot.messages[idx].chat_id, "Update OK", "");
-            bot.sendMessage(bot.messages[idx].chat_id, "restarting...", "");
+            bot.sendMessage(chatID, "Update OK", "");
+            bot.sendMessage(chatID, "restarting...", "");
             log_i("Update OK");
             restartRequired = 3000;
         }
         else {
-            bot.sendMessage(bot.messages[idx].chat_id, "Update failed !", "");
+            bot.sendMessage(chatID, "Update failed !", "");
             log_i("Update failed !");
         }
         return;
     }
 
-    bot.sendMessage(bot.messages[idx].chat_id, "42", "");
+    bot.sendMessage(chatID, "42", "");
 }
 
 void handleMessages(int msgCnt)

@@ -72,7 +72,7 @@ bool ESPCamera::Initialize(bool usePSRAM)
 
     esp_err_t err = esp_camera_init(&cameraConfig);
     if (ESP_OK != err) {
-        ESP_LOGD(TAG, "esp_camera_init error %d: %s", err, esp_err_to_name(err));
+        ESP_LOGE(TAG, "esp_camera_init error %d: %s", err, esp_err_to_name(err));
     }
     initialized = (ESP_OK == err);
     return initialized;
