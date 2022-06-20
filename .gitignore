@@ -1,5 +1,10 @@
-.pio
+# platformio build directory
+/.pio
+
+# ignore the folder where are temporary notes
+/notes
+
+#ignore the top firmware directory
+/firmware
 
 *.code-workspace
-
-/notes
