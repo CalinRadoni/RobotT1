@@ -91,9 +91,8 @@ bool ESPCamera::Reset(void)
     gpio_config(&conf);
 
     gpio_set_level((gpio_num_t)cameraConfig.pin_reset, 0);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     gpio_set_level((gpio_num_t)cameraConfig.pin_reset, 1);
-    vTaskDelay(50 / portTICK_PERIOD_MS);
 
     return true;
 }
@@ -111,7 +110,6 @@ bool ESPCamera::PowerDown(void)
     gpio_config(&conf);
 
     gpio_set_level((gpio_num_t)cameraConfig.pin_pwdn, 1);
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     return true;
 }
@@ -154,4 +152,112 @@ void ESPCamera::PrintCameraInfo(void)
         camSensor->status.gainceiling,
         camSensor->status.aec,
         camSensor->status.aec2);
+}
+
+
+extern "C" {
+    uint8_t SCCB_Read(uint8_t slv_addr, uint8_t reg);
+    uint8_t SCCB_Write(uint8_t slv_addr, uint8_t reg, uint8_t data);
+};
+
+#define YAVG  0x2F
+#define GAIN  0x00
+#define AEC   0x10
+#define REG04 0x04
+#define REG45 0x45
+
+int read_reg_sensor(sensor_t *sensor, uint8_t reg)
+{
+    if(SCCB_Write(sensor->slv_addr, 0xFF, 1) != 0) {
+        return 0;
+    }
+    return SCCB_Read(sensor->slv_addr, reg);
+}
+
+uint8_t get_reg_bits_sensor(sensor_t *sensor, uint8_t reg, uint8_t offset, uint8_t mask)
+{
+    return (read_reg_sensor(sensor, reg) >> offset) & mask;
+}
+
+bool ESPCamera::PrintGains(unsigned long ms) {
+    if (!ReadGains()) {
+        return false;
+    }
+
+    ESP_LOGI(TAG, "%8d : YAVG %04d, AGC %03d, AEC %04d", ms, xYAVG, xAGC, xAEC);
+    return true;
+}
+bool ESPCamera::ReadGains(void)
+{
+    sensor_t *camSensor = esp_camera_sensor_get();
+    if (camSensor == NULL) return false;
+
+    xYAVG = read_reg_sensor(camSensor, YAVG);
+
+    xAGC = read_reg_sensor(camSensor, GAIN);
+
+    xAEC = ((uint16_t)get_reg_bits_sensor(camSensor, REG45, 0, 0x3F) << 10)
+         | ((uint16_t)read_reg_sensor(camSensor, AEC) << 2)
+         | get_reg_bits_sensor(camSensor, REG04, 0, 3); // range is 0 - 1200
+
+    return true;
+}
+
+camera_fb_t* ESPCamera::GetImage()
+{
+    return esp_camera_fb_get();
+}
+
+camera_fb_t* ESPCamera::GetImage_wait(void)
+{
+    camera_fb_t *pic = NULL;
+
+    pic = esp_camera_fb_get();
+    ReadGains();
+
+    const unsigned int consecutiveCnt = 5;
+    const unsigned int maxChecks = 99;
+    unsigned int cnt = 0;
+    unsigned int cntAGC = 0;
+    unsigned int cntAEC = 0;
+    int prevAGC;
+    int prevAEC;
+    bool done = false;
+
+    prevAGC = xAGC;
+    prevAEC = xAEC;
+
+    while ((cnt < maxChecks) && !done) {
+        esp_camera_fb_return(pic);
+        pic = esp_camera_fb_get();
+        ReadGains();
+
+        if (prevAGC == xAGC) { ++cntAGC; }
+        else {
+            prevAGC = xAGC;
+            cntAGC = 0;
+        }
+        if (prevAEC == xAEC) { ++cntAEC; }
+        else {
+            prevAEC = xAEC;
+            cntAEC = 0;
+        }
+        ++cnt;
+
+        done = true;
+        if (cntAGC < consecutiveCnt) done = false;
+        if (cntAEC < consecutiveCnt) done = false;
+    }
+
+    ESP_LOGI(TAG, "YAVG %d, AGC %d, AEC %d", xYAVG, xAGC, xAEC);
+    ESP_LOGI(TAG, "cntAGC %d, cntAEC %d, cnt %d", cntAGC, cntAEC, cnt);
+
+    return pic;
+}
+
+void ESPCamera::ReleaseImage(camera_fb_t *pic)
+{
+    if (pic != NULL) {
+        esp_camera_fb_return(pic);
+    }
 }
