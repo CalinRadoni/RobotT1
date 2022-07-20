@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 
 #include "SimpleWiFi.h"
 #include "UpdateFromWeb.h"
@@ -10,9 +11,12 @@
 #include "credentials.h"
 #include "ESPCamera.h"
 
+#include "HIHSensor.h"
+
 SimpleWiFi simpleWiFi;
 UpdateFromWeb webUpdater;
 ESPCamera espCam;
+HIHSensor thSensor;
 
 WiFiClientSecure securedClient;
 UniversalTelegramBot bot(botToken, securedClient);
@@ -29,14 +33,44 @@ unsigned long timeRestartAfter = 2 * 86400000UL; // 48 hours
 uint32_t restartRequired = 0;
 
 int prevMinute = -1;
+bool minuteChanged = false;
 bool timeForTelegram = false;
+
+/*
+                            5V          3V3
+                           Gnd          GPIO16 / U2RxD
+            HS2_Data2 / GPIO12          GPIO0  / CSI_MCLK / ~Programming_mode
+            HS2_Data3 / GPIO13          Gnd
+SCL Sensor /  HS2_Cmd / GPIO15          3V3 / 5V
+SDA Sensor /  HS2_Clk / GPIO14          GPIO3  / U0RxD
+            HS2_Data0 / GPIO2           GPIO1  / U0TxD
+            HS2_Data1 / GPIO4           Gnd
+                              ESP32-CAM
+                              AI-Thinker
+
+    GPIO - 10k pull-down
+    HS2_Cmd   - 47k pull-up
+    HS2_Data0 - 47k pull-up
+    HS2_Data1 - 47k pull-up
+    HS2_Data2 - 47k pull-up
+    HS2_Data3 - 47k pull-up
+
+    LED = ~GPIO33
+    LED_Flash = HS2_Data1 / GPIO4 (1k ser + 10k Gnd + Q1)
+*/
 
 const int pinLED = 33;
 const int pinFlashLED = 4;
+const int pinSDA = 14;
+const int pinSCL = 15;
 
 //const int pinPIR = 4;
 volatile unsigned int motionDetected = 0;
 unsigned int motionCount = 0;
+
+uint16_t hihT = 0;
+uint16_t hihH = 0;
+bool thDataWIP = false;
 
 portMUX_TYPE muxM = portMUX_INITIALIZER_UNLOCKED;
 
@@ -61,15 +95,14 @@ void ResetBoard(uint32_t delayMS)
 }
 
 void SendTelegramMessage() {
-    snprintf(sbuffer, sBuffSize, "MC: %d", motionCount);
-//    bot.sendMessage(chatID, sbuffer, "");
-    Serial.println(sbuffer);
+    snprintf(sbuffer, sBuffSize, "%.1f degC, %.1f%%, %d m", (float)hihT / 10, (float)hihH / 10, motionCount);
+    bot.sendMessage(chatID, sbuffer, "");
 }
 
 void IRAM_ATTR handlerPIR() {
-    portENTER_CRITICAL_ISR(&muxM);
+    portENTER_CRITICAL_SAFE(&muxM);
     ++motionDetected;
-    portEXIT_CRITICAL_ISR(&muxM);
+    portEXIT_CRITICAL_SAFE(&muxM);
 }
 
 bool sendJPEGToTelegram(camera_fb_t *fb, const String& chat_id) {
@@ -152,29 +185,35 @@ bool sendJPEGToTelegram(camera_fb_t *fb, const String& chat_id) {
 
 void sendPhoto(const String& chat_id, bool useFlashLED)
 {
+    if (!espCam.IsInitialized()) {
+        if (!espCam.Initialize(psramFound())) {
+            log_e("Camera initialize failed");
+            bot.sendMessage(chat_id, "Camera initialize failed", "");
+            espCam.Deinit();
+            return;
+        }
+    }
+
     // Note: useFlashLED is useless if grab_mode != CAMERA_GRAB_LATEST
+    if (useFlashLED) { digitalWrite(pinFlashLED, HIGH); }
 
-    if (useFlashLED) {
-        digitalWrite(pinFlashLED, HIGH);
-    }
+    camera_fb_t *pic = espCam.GetImage_wait();
 
-    camera_fb_t *pic = esp_camera_fb_get();
-
-    if (useFlashLED) {
-        digitalWrite(pinFlashLED, LOW);
-    }
+    if (useFlashLED) { digitalWrite(pinFlashLED, LOW); }
 
     if (pic == NULL) {
         log_e("Camera capture failed");
         bot.sendMessage(chat_id, "Camera capture failed", "");
-        return;
+    }
+    else {
+        if(!sendJPEGToTelegram(pic, chat_id)) {
+            log_e("JPEG send error");
+        }
+
+        espCam.ReleaseImage(pic);
     }
 
-    if(!sendJPEGToTelegram(pic, chat_id)) {
-        log_e("JPEG send error");
-    }
-
-    esp_camera_fb_return(pic);
+    espCam.Deinit();
 }
 
 void handleMessage(int idx)
@@ -293,6 +332,7 @@ void CheckTimes(void)
         return;
     }
     prevMinute = timeInfo.tm_min;
+    minuteChanged = true;
 
     if (prevMinute == 0) {
         // if ((timeInfo.tm_hour % 4) == 0) {
@@ -333,6 +373,12 @@ void setup()
         }
     }
 
+    Wire.setPins(pinSDA, pinSCL); // call Wire.begin() after this call or call it like Wire.begin(pinSDA, pinSCL)
+    Wire.begin();
+
+    thSensor.ReadInit();
+    thDataWIP = true;
+
     while (!simpleWiFi.IsConnected()) { delay(10); }
 
     configTime(gmtOffset, daylightOffset, "pool.ntp.org");
@@ -346,10 +392,14 @@ void setup()
 
     if (espCam.IsInitialized()) {
         espCam.PrintCameraInfo();
+        espCam.PrintGains(millis());
     }
     else {
         bot.sendMessage(chatID, "Camera initialization failed !", "");
     }
+
+    espCam.KeepPowerDownOnDeepSleep();
+    espCam.Deinit();
 
     restartRequired = 0;
     timeOfLastMessage = millis();
@@ -364,20 +414,37 @@ void loop()
     simpleWiFi.CheckConnection(true);
 
     if (motionDetected > 0) {
-        portENTER_CRITICAL_ISR(&muxM);
+        portENTER_CRITICAL_SAFE(&muxM);
             motionCount += motionDetected;
             motionDetected = 0;
-        portEXIT_CRITICAL_ISR(&muxM);
+        portEXIT_CRITICAL_SAFE(&muxM);
 
         SendTelegramMessage();
 
-        snprintf(sbuffer, sBuffSize, "MC: %d", motionCount);
-        Serial.println(sbuffer);
+        log_i("Motion count: %.d", motionCount);
+    }
+
+    if (thDataWIP) {
+        if (HIHSensor::Status::DATA_OK == thSensor.ReadData()) {
+            portENTER_CRITICAL_ISR(&muxM);
+            hihT = thSensor.GetTemperature() - 2731;
+            hihH = thSensor.GetHumidity();
+            thDataWIP = false;
+            portEXIT_CRITICAL_SAFE(&muxM);
+
+            log_i("Temperature %.1f degC, Humidity %.1f%%", (float)hihT / 10, (float)hihH / 10);
+        }
     }
 
     CheckTimes();
+    if (minuteChanged){
+        minuteChanged = false;
+        thSensor.ReadInit();
+        thDataWIP = true;
+    }
     if (timeForTelegram) {
         timeForTelegram = false;
+        SendTelegramMessage();
     }
 
     int msgCnt = bot.getUpdates(bot.last_message_received + 1);
