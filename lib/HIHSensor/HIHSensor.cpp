@@ -19,8 +19,10 @@ bool HIHSensor::IsPresent(void)
 {
     Wire.beginTransmission(sensorAddr);
     uint8_t err = Wire.endTransmission();
-    if (err == 0) return true;
-    if (err == 2) return false;
+    if (0 == err) {
+        return true;
+    }
+
     log_e("HIH Sensor detection error %d at address 0x%02X", err, sensorAddr);
     return false;
 }

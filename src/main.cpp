@@ -94,8 +94,13 @@ void ResetBoard(uint32_t delayMS)
     ESP.restart();
 }
 
-void SendTelegramMessage() {
+void SendPeriodicTelegramMessage() {
     snprintf(sbuffer, sBuffSize, "%.1f degC, %.1f%%, %d m", (float)hihT / 10, (float)hihH / 10, motionCount);
+    bot.sendMessage(chatID, sbuffer, "");
+}
+
+void SendMotionTelegramMessage() {
+    snprintf(sbuffer, sBuffSize, "Motion detected, count = %d", motionCount);
     bot.sendMessage(chatID, sbuffer, "");
 }
 
@@ -248,7 +253,7 @@ void handleMessage(int idx)
     }
 
     if (userCmd == "/data") {
-        SendTelegramMessage();
+        SendPeriodicTelegramMessage();
         return;
     }
 
@@ -419,7 +424,7 @@ void loop()
             motionDetected = 0;
         portEXIT_CRITICAL_SAFE(&muxM);
 
-        SendTelegramMessage();
+        SendMotionTelegramMessage();
 
         log_i("Motion count: %.d", motionCount);
     }
@@ -439,12 +444,13 @@ void loop()
     CheckTimes();
     if (minuteChanged){
         minuteChanged = false;
-        thSensor.ReadInit();
-        thDataWIP = true;
+        if (thSensor.ReadInit()) {
+            thDataWIP = true;
+        }
     }
     if (timeForTelegram) {
         timeForTelegram = false;
-        SendTelegramMessage();
+        SendPeriodicTelegramMessage();
     }
 
     int msgCnt = bot.getUpdates(bot.last_message_received + 1);
