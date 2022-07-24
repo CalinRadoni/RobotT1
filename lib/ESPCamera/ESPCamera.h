@@ -26,6 +26,8 @@ public:
     camera_fb_t* GetImage(void);
     camera_fb_t* GetImage_wait(void);
     void ReleaseImage(camera_fb_t*);
+    void SetConsecutiveChecks(unsigned int);
+    void SetMaxChecks(unsigned int);
 
 protected:
     bool initialized;
@@ -35,6 +37,9 @@ protected:
     int xAGC;
     int xAEC;
     bool ReadGains(void);
+
+    unsigned int ceqChecks;
+    unsigned int maxChecks;
 };
 
 #endif

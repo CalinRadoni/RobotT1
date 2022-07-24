@@ -10,6 +10,9 @@ static const char *TAG = "ESPCamera";
 
 ESPCamera::ESPCamera(void)
 {
+    ceqChecks = 5;
+    maxChecks = 99;
+
     initialized = false;
     InitializeConfig();
 }
@@ -215,8 +218,6 @@ camera_fb_t* ESPCamera::GetImage_wait(void)
     pic = esp_camera_fb_get();
     ReadGains();
 
-    const unsigned int consecutiveCnt = 5;
-    const unsigned int maxChecks = 99;
     unsigned int cnt = 0;
     unsigned int cntAGC = 0;
     unsigned int cntAEC = 0;
@@ -245,8 +246,8 @@ camera_fb_t* ESPCamera::GetImage_wait(void)
         ++cnt;
 
         done = true;
-        if (cntAGC < consecutiveCnt) done = false;
-        if (cntAEC < consecutiveCnt) done = false;
+        if (cntAGC < ceqChecks) done = false;
+        if (cntAEC < ceqChecks) done = false;
     }
 
     ESP_LOGI(TAG, "YAVG %d, AGC %d, AEC %d", xYAVG, xAGC, xAEC);
@@ -260,4 +261,14 @@ void ESPCamera::ReleaseImage(camera_fb_t *pic)
     if (pic != NULL) {
         esp_camera_fb_return(pic);
     }
+}
+
+void ESPCamera::SetConsecutiveChecks(unsigned int val)
+{
+    ceqChecks = val;
+}
+
+void ESPCamera::SetMaxChecks(unsigned int val)
+{
+    maxChecks = val;
 }
