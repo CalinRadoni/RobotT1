@@ -147,14 +147,19 @@ void ESPCamera::PrintCameraInfo(void)
     sensor_t *camSensor = esp_camera_sensor_get();
     if (camSensor == NULL) return;
 
-    ESP_LOGI(TAG, "Camera settings: AWB %d, AWB gain %d, AGC %d, AGC gain %d, gain ceiling %d, AEC %d, AEC2 %d",
+    ESP_LOGI(TAG, "Camera settings: WB mode %d, AWB %d, AWB gain %d, "
+                    "AGC %d, AGC gain %d, gain ceiling %d, "
+                    "AEC %d, AEC2 %d, AE level %d, AEC value %d",
+        camSensor->status.wb_mode,
         camSensor->status.awb,
         camSensor->status.awb_gain,
         camSensor->status.agc,
         camSensor->status.agc_gain,
         camSensor->status.gainceiling,
         camSensor->status.aec,
-        camSensor->status.aec2);
+        camSensor->status.aec2,
+        camSensor->status.ae_level,
+        camSensor->status.aec_value);
 }
 
 
