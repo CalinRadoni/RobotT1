@@ -381,8 +381,7 @@ void setup()
     Wire.setPins(pinSDA, pinSCL); // call Wire.begin() after this call or call it like Wire.begin(pinSDA, pinSCL)
     Wire.begin();
 
-    thSensor.ReadInit();
-    thDataWIP = true;
+    thDataWIP = thSensor.ReadInit();
 
     while (!simpleWiFi.IsConnected()) { delay(10); }
 
@@ -430,14 +429,22 @@ void loop()
     }
 
     if (thDataWIP) {
-        if (HIHSensor::Status::DATA_OK == thSensor.ReadData()) {
-            portENTER_CRITICAL_ISR(&muxM);
-            hihT = thSensor.GetTemperature() - 2731;
-            hihH = thSensor.GetHumidity();
-            thDataWIP = false;
-            portEXIT_CRITICAL_SAFE(&muxM);
+        switch (thSensor.ReadData()) {
+            case HIHSensor::Status::DATA_OK:
+                portENTER_CRITICAL_ISR(&muxM);
+                hihT = thSensor.GetTemperature() - 2731;
+                hihH = thSensor.GetHumidity();
+                thDataWIP = false;
+                portEXIT_CRITICAL_SAFE(&muxM);
 
-            log_i("Temperature %.1f degC, Humidity %.1f%%", (float)hihT / 10, (float)hihH / 10);
+                log_i("Temperature %.1f degC, Humidity %.1f%%", (float)hihT / 10, (float)hihH / 10);
+                break;
+
+            case HIHSensor::Status::DATA_Err:
+                thDataWIP = false;
+                break;
+
+            default: break;
         }
     }
 
