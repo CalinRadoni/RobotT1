@@ -5,6 +5,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp32-hal-log.h"
 
 static const char *TAG = "ESPCamera";
 
