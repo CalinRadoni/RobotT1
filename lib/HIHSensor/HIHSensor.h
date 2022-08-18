@@ -34,6 +34,13 @@ public:
 	 */
 	HIHSensor::Status ReadData(void);
 
+    /**
+     * \brief Check if a read is in progress
+     *
+     * \return true if a read is in progress
+     */
+    bool ReadInProgress(void);
+
 	/**
 	 * \brief Converts rawH to 10*humidity[%RH]
 	 *
@@ -52,6 +59,8 @@ public:
 protected:
     uint16_t rawH;
     uint16_t rawT;
+
+    bool readInProgress;
 };
 
 #endif

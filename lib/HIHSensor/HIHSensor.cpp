@@ -8,6 +8,8 @@ HIHSensor::HIHSensor(void)
 {
     rawH = 0;
     rawT = 0;
+
+    readInProgress = false;
 }
 
 HIHSensor::~HIHSensor()
@@ -30,10 +32,12 @@ bool HIHSensor::IsPresent(void)
 bool HIHSensor::ReadInit(void)
 {
     Wire.beginTransmission(sensorAddr);
-    if (0 == Wire.endTransmission()) {
-        return true;
+    if (Wire.endTransmission() != 0) {
+        return false;
     }
-    return false;
+
+    readInProgress = true;
+    return true;
 }
 
 HIHSensor::Status HIHSensor::ReadData(void)
@@ -43,7 +47,8 @@ HIHSensor::Status HIHSensor::ReadData(void)
     uint8_t bytesReceived = Wire.requestFrom(sensorAddr, dataLEN);
     if (dataLEN != bytesReceived) {
         log_e("Received %d bytes instead of %d", bytesReceived, dataLEN);
-        return Status::DATA_Err;
+        readInProgress = false;
+        return HIHSensor::Status::DATA_Err;
     }
 
     uint8_t buffer[dataLEN];
@@ -60,9 +65,17 @@ HIHSensor::Status HIHSensor::ReadData(void)
     rawT += buffer[3];
     rawT  = rawT >> 2;
 
-    if(stale == 0x00) return Status::DATA_OK;
-    if(stale == 0x40) return Status::DATA_Stale;
-    return Status::DATA_Err;
+    if(stale == 0x00) {
+        readInProgress = false;
+        return HIHSensor::Status::DATA_OK;
+    }
+
+    if(stale == 0x40) {
+        return HIHSensor::Status::DATA_Stale;
+    }
+
+    readInProgress = false;
+    return HIHSensor::Status::DATA_Err;
 }
 
 uint16_t HIHSensor::GetHumidity(void)
@@ -88,4 +101,9 @@ uint16_t HIHSensor::GetTemperature(void)
 	val += 5;
 	val /= 10;
 	return (uint16_t)val;
+}
+
+bool HIHSensor::ReadInProgress(void)
+{
+    return readInProgress;
 }

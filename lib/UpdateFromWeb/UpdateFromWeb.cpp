@@ -186,18 +186,3 @@ bool UpdateFromWeb::UpdateFromLink(String link)
     client = nullptr;
     return res;
 }
-
-void UpdateFromWeb::PrintApplicationDescription(void)
-{
-    const esp_app_desc_t *appDesc = esp_ota_get_app_description();
-    if (appDesc == nullptr) {
-        log_e("Failed to get application description");
-        return;
-    }
-
-    log_i("%s %s", appDesc->project_name, appDesc->version);
-    log_i("Compiled with ESP-IDF %s on %s %s",
-        appDesc->idf_ver,
-        appDesc->date,
-        appDesc->time);
-}

@@ -1,4 +1,4 @@
-#include "SimpleWiFi.h"
+#include "simpleWiFi.h"
 
 SimpleWiFi::SimpleWiFi(void)
 {

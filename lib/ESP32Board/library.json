@@ -1,12 +1,12 @@
 {
-    "name": "SimpleWiFi",
+    "name": "ESP32Board",
     "version": "1.0.0",
-    "description": "A simple library for handling WiFi connections",
+    "description": "A simple library for ESP32 Boards",
     "keywords": [
         "ESP32",
+        "board manager",
         "wifi",
-        "manager",
-        "wifi manager"
+        "web server"
     ],
     "repository":
     {

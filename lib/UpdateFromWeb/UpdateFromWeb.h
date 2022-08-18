@@ -23,7 +23,6 @@ public:
     virtual ~UpdateFromWeb();
 
     bool UpdateFromLink(String);
-    void PrintApplicationDescription(void);
 
 private:
     bool SetCertificate(String);
