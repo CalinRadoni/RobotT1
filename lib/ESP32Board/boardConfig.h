@@ -3,9 +3,7 @@
 
 #include <Arduino.h>
 
-#include "wifiConfig.h"
-
-const unsigned char maxWiFiConfigs = 3;
+#include "netConfig.h"
 
 class BoardConfig
 {
@@ -13,7 +11,8 @@ public:
     BoardConfig(void);
     virtual ~BoardConfig();
 
-    WiFiConfig wCfg[maxWiFiConfigs];
+    NetConfig net;
+
     String chatID;
     String botName;
     String botToken;

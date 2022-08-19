@@ -7,7 +7,10 @@
 Board::Board(void)
     : SDA_pin(-1)
     , SCL_pin(-1)
+    , configLoaded(false)
 {
+    simpleWiFi.config = &boardConfig.net;
+
     boardConfig.Initialize();
 };
 
@@ -20,32 +23,27 @@ unsigned int Board::Initialize(void)
 {
     if (!Init_level0()) { return 0; }
 
+    // TODO Init NVS
     // Init NVS here
 
     // Load configuration
-    boardConfig.LoadFromNVS();
+    configLoaded = boardConfig.LoadFromNVS();
+    if (!configLoaded) {
+        log_w("Failed to load configuration");
+    }
 
-    // for (unsigned short i = 0; i < credCnt && i < maxWiFiConfigs; ++i) {
-    //     strncpy(boardConfig.wCfg[i].SSID, SSID[i], 32);
-    //     strncpy(boardConfig.wCfg[i].Pass, PASS[i], 64);
-    //     boardConfig.wCfg[i].SSID[32] = 0;
-    //     boardConfig.wCfg[i].Pass[64] = 0;
-    // }
+    // boardConfig.net....................
 
     // boardConfig.chatID = chatID;
     // boardConfig.botName = botName;
     // boardConfig.botToken = botToken;
 
-    for (unsigned short i = 0; i < maxWiFiConfigs && i < CredentialCount; ++i) {
-        strncpy(simpleWiFi.credentials[i].SSID, boardConfig.wCfg[i].SSID, 32);
-        simpleWiFi.credentials[i].SSID[32] = 0;
-        strncpy(simpleWiFi.credentials[i].PASS, boardConfig.wCfg[i].Pass, 64);
-        simpleWiFi.credentials[i].PASS[64] = 0;
-    }
-
     if (!Init_level1()) { return 1; }
 
-    simpleWiFi.Reconnect(true);
+    bool wifiConnWIP = false;
+    if (configLoaded) {
+         wifiConnWIP = simpleWiFi.Reconnect(false);
+    }
 
     PrintApplicationDescription();
 

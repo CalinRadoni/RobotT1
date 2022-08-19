@@ -26,7 +26,7 @@ public:
      *
      * Workflow:
      *   call Init_level0
-     *   Initialize NVS
+     *   Initialize NVS and set `configLoaded`
      *   Load configuration from NVS
      *   call Init_level1
      *   Initialize WiFi connection
@@ -59,6 +59,8 @@ public:
 protected:
     SimpleWiFi simpleWiFi;
     UpdateFromWeb webUpdater;
+
+    bool configLoaded;
 
 };
 

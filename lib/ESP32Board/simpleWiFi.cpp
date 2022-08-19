@@ -1,12 +1,11 @@
 #include "simpleWiFi.h"
 
 SimpleWiFi::SimpleWiFi(void)
+    : connectionInitWaitTime(ConnectionInitWaitTime)
+    , config(nullptr)
+    , initialized(false)
+    , connected(false)
 {
-    connectionInitWaitTime = ConnectionInitWaitTime;
-
-    initialized = false;
-    connected = false;
-
 #if defined(ARDUINO_ARCH_ESP32)
     evidSC = 0;
     evidGI = 0;
@@ -45,9 +44,6 @@ void SimpleWiFi::Initialize(void)
 
 bool SimpleWiFi::InitWiFiConnection(void)
 {
-    unsigned char credIdx = 0;
-    unsigned long msTimeMax;
-
     if (!initialized) {
         Initialize();
     }
@@ -57,15 +53,20 @@ bool SimpleWiFi::InitWiFiConnection(void)
         connected = false;
     }
 
-    while (credIdx < CredentialCount) {
+    if (config == nullptr) {
+        log_e("Config not set !");
+        return false;
+    }
+
+    for (unsigned int idx = 0; idx < config->wifiCnt; ++idx) {
         Serial.print("Connecting to ");
-        Serial.println(credentials[credIdx].SSID);
+        Serial.println(config->wifi[idx].SSID);
 
         WiFi.mode(WIFI_STA);
-        WiFi.begin(credentials[credIdx].SSID, credentials[credIdx].PASS);
+        WiFi.begin(config->wifi[idx].SSID, config->wifi[idx].Pass);
 
-        msTimeMax = millis() + connectionInitWaitTime;
-        while (millis() < msTimeMax) {
+        unsigned long startTime = millis();
+        while ((millis() - startTime) < connectionInitWaitTime) {
             if ((WiFi.status() == WL_CONNECTED) ||
                 (WiFi.status() == WL_CONNECT_FAILED)) {
                 break;
@@ -73,9 +74,9 @@ bool SimpleWiFi::InitWiFiConnection(void)
             delay(10);
         }
 
-        if (WiFi.status() == WL_CONNECTED) { return true; }
-
-        ++credIdx;
+        if (WiFi.status() == WL_CONNECTED) {
+            return true;
+        }
     }
     return false;
 }

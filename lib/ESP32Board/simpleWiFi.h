@@ -11,21 +11,16 @@
 #error "This code is only for ESP32 or ESP8266 with Arduino framework !"
 #endif
 
-const unsigned short CredentialCount = 3;
-const unsigned long ConnectionInitWaitTime = 5000; // 5 seconds
+#include "netConfig.h"
 
-class WiFiData {
-public:
-    char SSID[33];
-    char PASS[65];
-};
+const unsigned long ConnectionInitWaitTime = 5000; // 5 seconds
 
 class SimpleWiFi {
 public:
     SimpleWiFi(void);
     virtual ~SimpleWiFi();
 
-    WiFiData credentials[CredentialCount];
+    NetConfig *config;
 
     unsigned long connectionInitWaitTime;
 

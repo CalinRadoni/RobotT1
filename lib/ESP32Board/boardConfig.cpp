@@ -12,8 +12,7 @@ BoardConfig::~BoardConfig()
 
 void BoardConfig::Initialize(void)
 {
-    for (unsigned char i = 0; i < maxWiFiConfigs; ++i)
-        wCfg[i].Initialize();
+    net.Initialize();
 
     chatID.clear();
     botName.clear();
