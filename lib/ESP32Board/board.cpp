@@ -5,44 +5,41 @@
 #include <esp_ota_ops.h>
 
 Board::Board(void)
-    : SDA_pin(-1)
+    : boardConfig(nullptr)
+    , SDA_pin(-1)
     , SCL_pin(-1)
     , configLoaded(false)
 {
-    simpleWiFi.config = &boardConfig.net;
-
-    boardConfig.Initialize();
-};
+    //
+}
 
 Board::~Board()
 {
     //
 }
 
-unsigned int Board::Initialize(void)
+unsigned int Board::Initialize(BoardConfig *cfgIn)
 {
+    boardConfig = cfgIn;
+
     if (!Init_level0()) { return 0; }
 
-    // TODO Init NVS
-    // Init NVS here
+    if (boardConfig == nullptr) { return 0; }
 
-    // Load configuration
-    configLoaded = boardConfig.LoadFromNVS();
+    boardConfig->Initialize();
+    configLoaded = boardConfig->Load();
     if (!configLoaded) {
         log_w("Failed to load configuration");
     }
-
-    // boardConfig.net....................
-
-    // boardConfig.chatID = chatID;
-    // boardConfig.botName = botName;
-    // boardConfig.botToken = botToken;
 
     if (!Init_level1()) { return 1; }
 
     bool wifiConnWIP = false;
     if (configLoaded) {
-         wifiConnWIP = simpleWiFi.Reconnect(false);
+        simpleWiFi.config = boardConfig;
+        simpleWiFi.Initialize();
+
+        wifiConnWIP = simpleWiFi.Reconnect(false);
     }
 
     PrintApplicationDescription();

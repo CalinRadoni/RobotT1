@@ -11,16 +11,17 @@
 #error "This code is only for ESP32 or ESP8266 with Arduino framework !"
 #endif
 
-#include "netConfig.h"
+#include "boardConfig.h"
 
 const unsigned long ConnectionInitWaitTime = 5000; // 5 seconds
 
-class SimpleWiFi {
+class SimpleWiFi
+{
 public:
     SimpleWiFi(void);
     virtual ~SimpleWiFi();
 
-    NetConfig *config;
+    BoardConfig *config;
 
     unsigned long connectionInitWaitTime;
 

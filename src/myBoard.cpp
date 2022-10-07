@@ -1,5 +1,7 @@
 #include "myBoard.h"
 
+#include "credentials.h"
+
 MyBoard::MyBoard(void)
     : setupCamOK(false)
     , setupTHSensorOK(false)
@@ -31,6 +33,16 @@ bool MyBoard::Init_level0(void)
 
 bool MyBoard::Init_level1(void)
 {
+    // --------------------------------------------------------------------------------
+    // HACK Remove these when the WEB UI is working
+    // --------------------------------------------------------------------------------
+    ((MyConfig*)boardConfig)->chatID = chatID;
+    ((MyConfig*)boardConfig)->botName = botName;
+    ((MyConfig*)boardConfig)->botToken = botToken;
+    // --------------------------------------------------------------------------------
+    // HACK Remove these when the WEB UI is working
+    // --------------------------------------------------------------------------------
+
     return true;
 }
 

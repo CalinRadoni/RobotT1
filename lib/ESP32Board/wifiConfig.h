@@ -9,15 +9,15 @@ public:
     WiFiConfig(void);
     virtual ~WiFiConfig();
 
-    char SSID[33];
-    char Pass[65];
+    String SSID;
+    String Pass;
 
     bool useDHCP;
     IPAddress address;
     IPAddress mask;
     IPAddress gateway;
-    IPAddress dns1;
-    IPAddress dns2;
+    IPAddress srvDNS1;
+    IPAddress srvDNS2;
 
     void Initialize(void);
 };

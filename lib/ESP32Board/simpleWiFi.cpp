@@ -63,7 +63,7 @@ bool SimpleWiFi::InitWiFiConnection(void)
         Serial.println(config->wifi[idx].SSID);
 
         WiFi.mode(WIFI_STA);
-        WiFi.begin(config->wifi[idx].SSID, config->wifi[idx].Pass);
+        WiFi.begin(config->wifi[idx].SSID.c_str(), config->wifi[idx].Pass.c_str());
 
         unsigned long startTime = millis();
         while ((millis() - startTime) < connectionInitWaitTime) {

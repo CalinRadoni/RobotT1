@@ -11,8 +11,6 @@ public:
     Board(void);
     virtual ~Board();
 
-    BoardConfig boardConfig;
-
     int SDA_pin;
     int SCL_pin;
 
@@ -36,7 +34,7 @@ public:
      *   wait for WiFi to connect
      *   call Init_level3
      */
-    unsigned int Initialize(void);
+    unsigned int Initialize(BoardConfig*);
 
     virtual void CustomReset(void) = 0;
 
@@ -57,6 +55,7 @@ public:
     void PrintApplicationDescription(void);
 
 protected:
+    BoardConfig *boardConfig;
     SimpleWiFi simpleWiFi;
     UpdateFromWeb webUpdater;
 

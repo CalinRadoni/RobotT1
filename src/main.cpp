@@ -1,15 +1,17 @@
 #include "myBoard.h"
+#include "myConfig.h"
 
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
 #include <ArduinoJson.h>
 
 MyBoard board;
+MyConfig config;
 
 WiFiClientSecure securedClient;
 
-// board.boardConfig.botToken is empty now but it will be updated in setup()
-UniversalTelegramBot bot(board.boardConfig.botToken, securedClient);
+// config.botToken is empty now but it will be updated in setup()
+UniversalTelegramBot bot(config.botToken, securedClient);
 
 const long gmtOffset = 7200;        // seconds
 const int daylightOffset = 3600;    // seconds
@@ -44,12 +46,12 @@ const char *helpMessage =
 
 void SendPeriodicTelegramMessage() {
     snprintf(sbuffer, sBuffSize, "%.1f degC, %.1f%%, %d m", (float)hihT / 10, (float)hihH / 10, motionCount);
-    bot.sendMessage(board.boardConfig.chatID, sbuffer, "");
+    bot.sendMessage(config.chatID, sbuffer, "");
 }
 
 void SendMotionTelegramMessage() {
     snprintf(sbuffer, sBuffSize, "Motion detected, count = %d", motionCount);
-    bot.sendMessage(board.boardConfig.chatID, sbuffer, "");
+    bot.sendMessage(config.chatID, sbuffer, "");
 }
 
 void IRAM_ATTR handlerPIR() {
@@ -242,7 +244,7 @@ void handleMessages(int msgCnt)
 {
     for (int i = 0; i < msgCnt; ++i) {
         String inputChatID = bot.messages[i].chat_id;
-        if (inputChatID == board.boardConfig.chatID) {
+        if (inputChatID == config.chatID) {
             timeOfLastMessage = millis();
             handleMessage(i);
         }
@@ -300,17 +302,17 @@ void setup()
 {
     Serial.begin(115200);
 
-    board.Initialize();
-    bot.updateToken(board.boardConfig.botToken);
+    board.Initialize(&config);
+    bot.updateToken(config.botToken);
 
     configTime(gmtOffset, daylightOffset, "pool.ntp.org");
     printLocalTime();
 
     securedClient.setCACert(TELEGRAM_CERTIFICATE_ROOT);
 
-    bot.sendMessage(board.boardConfig.chatID, "I am alive !", "");
+    bot.sendMessage(config.chatID, "I am alive !", "");
     if (!board.setupCamOK) {
-        bot.sendMessage(board.boardConfig.chatID, "Camera initialization failed !", "");
+        bot.sendMessage(config.chatID, "Camera initialization failed !", "");
     }
 
     restartRequired = 0;

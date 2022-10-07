@@ -3,6 +3,8 @@
 
 #include "board.h"
 
+#include "myConfig.h"
+
 #include "ESPCamera.h"
 #include "HIHSensor.h"
 
