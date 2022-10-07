@@ -8,7 +8,6 @@ Board::Board(void)
     : boardConfig(nullptr)
     , SDA_pin(-1)
     , SCL_pin(-1)
-    , configLoaded(false)
 {
     //
 }
@@ -27,20 +26,16 @@ unsigned int Board::Initialize(BoardConfig *cfgIn)
     if (boardConfig == nullptr) { return 0; }
 
     boardConfig->Initialize();
-    configLoaded = boardConfig->Load();
-    if (!configLoaded) {
+    if (!boardConfig->Load()) {
         log_w("Failed to load configuration");
     }
 
     if (!Init_level1()) { return 1; }
 
-    bool wifiConnWIP = false;
-    if (configLoaded) {
-        simpleWiFi.config = boardConfig;
-        simpleWiFi.Initialize();
-
-        wifiConnWIP = simpleWiFi.Reconnect(false);
-    }
+    simpleWiFi.config = boardConfig;
+    simpleWiFi.Initialize();
+    unsigned long wfs = millis();
+    bool wifiConnWIP = simpleWiFi.Reconnect(false);
 
     PrintApplicationDescription();
 
@@ -49,13 +44,20 @@ unsigned int Board::Initialize(BoardConfig *cfgIn)
 
     if(!Init_level2()) { return 2; }
 
-    while (!simpleWiFi.IsConnected()) {
-        delay(10);
-        yield();
+    bool timeout = false;
+    while (!simpleWiFi.IsConnected() && !timeout) {
+        if ((millis() - wfs) >= WiFiTimeout) {
+            timeout = true;
+        }
+        else {
+            delay(10);
+            yield();
+        }
     }
 
     if (!Init_level3()) { return 3; }
 
+    if (timeout) { return 0xE0; }
     return 0xFF;
 }
 

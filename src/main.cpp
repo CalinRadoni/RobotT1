@@ -13,9 +13,6 @@ WiFiClientSecure securedClient;
 // config.botToken is empty now but it will be updated in setup()
 UniversalTelegramBot bot(config.botToken, securedClient);
 
-const long gmtOffset = 7200;        // seconds
-const int daylightOffset = 3600;    // seconds
-
 const unsigned char sBuffSize = 120;
 char sbuffer[sBuffSize];
 
@@ -261,12 +258,8 @@ void printLocalTime()
     }
 
     log_i("%d.%02d.%02.d %02d:%02d:%02d",
-        1900 + timeInfo.tm_year,
-        1 + timeInfo.tm_mon,
-        timeInfo.tm_mday,
-        timeInfo.tm_hour,
-        timeInfo.tm_min,
-        timeInfo.tm_sec);
+        1900 + timeInfo.tm_year, 1 + timeInfo.tm_mon, timeInfo.tm_mday,
+        timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
 }
 
 void CheckTimes(void)
@@ -305,7 +298,11 @@ void setup()
     board.Initialize(&config);
     bot.updateToken(config.botToken);
 
-    configTime(gmtOffset, daylightOffset, "pool.ntp.org");
+    if (config.srvNTP.length() > 0) {
+        configTime(config.gmtOffset, config.daylightOffset, config.srvNTP.c_str());
+    } else {
+        log_e("NTP synchronization is required for Telegram authentication !");
+    }
     printLocalTime();
 
     securedClient.setCACert(TELEGRAM_CERTIFICATE_ROOT);

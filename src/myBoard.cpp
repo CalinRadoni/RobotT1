@@ -36,9 +36,21 @@ bool MyBoard::Init_level1(void)
     // --------------------------------------------------------------------------------
     // HACK Remove these when the WEB UI is working
     // --------------------------------------------------------------------------------
+    boardConfig->wifi[0].SSID = SSID[0];
+    boardConfig->wifi[0].Pass = PASS[0];
+    boardConfig->wifi[0].useDHCP = true;
+
+    boardConfig->wifi[1].SSID = SSID[1];
+    boardConfig->wifi[1].Pass = PASS[1];
+    boardConfig->wifi[1].useDHCP = true;
+
     ((MyConfig*)boardConfig)->chatID = chatID;
     ((MyConfig*)boardConfig)->botName = botName;
     ((MyConfig*)boardConfig)->botToken = botToken;
+
+    boardConfig->gmtOffset = 7200;
+    boardConfig->daylightOffset = 3600;
+    boardConfig->srvNTP = "pool.ntp.org";
     // --------------------------------------------------------------------------------
     // HACK Remove these when the WEB UI is working
     // --------------------------------------------------------------------------------
