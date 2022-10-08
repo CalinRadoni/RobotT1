@@ -12,7 +12,7 @@ public:
     String SSID;
     String Pass;
 
-    bool useDHCP;
+    bool useStaticIP;
     IPAddress address;
     IPAddress mask;
     IPAddress gateway;

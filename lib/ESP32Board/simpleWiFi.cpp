@@ -59,23 +59,32 @@ bool SimpleWiFi::InitWiFiConnection(void)
     }
 
     for (unsigned int idx = 0; idx < config->wifiCnt; ++idx) {
-        Serial.print("Connecting to ");
-        Serial.println(config->wifi[idx].SSID);
+        if (config->wifi[idx].SSID.length() > 0) {
+            log_i("Connecting to %s", config->wifi[idx].SSID.c_str());
 
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(config->wifi[idx].SSID.c_str(), config->wifi[idx].Pass.c_str());
-
-        unsigned long startTime = millis();
-        while ((millis() - startTime) < connectionInitWaitTime) {
-            if ((WiFi.status() == WL_CONNECTED) ||
-                (WiFi.status() == WL_CONNECT_FAILED)) {
-                break;
+            if (config->wifi[idx].useStaticIP) {
+                if (!WiFi.config(config->wifi[idx].address, config->wifi[idx].gateway, config->wifi[idx].mask,
+                    config->wifi[idx].srvDNS1, config->wifi[idx].srvDNS2)) {
+                        log_e("Failed to set static IP configuration for %s", config->wifi[idx].SSID.c_str());
+                    }
             }
-            delay(10);
-        }
+            else {
+                WiFi.config((uint32_t)0, (uint32_t)0, (uint32_t)0);
+            }
 
-        if (WiFi.status() == WL_CONNECTED) {
-            return true;
+            WiFi.mode(WIFI_STA);
+            WiFi.begin(config->wifi[idx].SSID.c_str(), config->wifi[idx].Pass.c_str());
+
+            unsigned long startTime = millis();
+            while ((millis() - startTime) < connectionInitWaitTime) {
+                if ((WiFi.status() == WL_CONNECTED) ||
+                    (WiFi.status() == WL_CONNECT_FAILED)) {
+                    break;
+                }
+                delay(10);
+            }
+
+            if (WiFi.status() == WL_CONNECTED) { return true; }
         }
     }
     return false;
@@ -94,13 +103,13 @@ bool SimpleWiFi::CheckConnection(bool restartOnFail)
 bool SimpleWiFi::Reconnect(bool restartOnFail)
 {
     if (InitWiFiConnection()) {
-        Serial.println("Connected to WiFi AP");
+        log_n("Connected to WiFi AP");
         return true;
     }
 
-    Serial.println("Failed to connect");
+    log_w("Failed to connect");
     if (restartOnFail) {
-        Serial.println("... will restart in 10 seconds.");
+        log_w("... will restart in 10 seconds.");
         delay(10000);
         ESP.restart();
     }
@@ -115,13 +124,14 @@ bool SimpleWiFi::IsConnected(void)
 #if defined(ARDUINO_ARCH_ESP32)
 void SimpleWiFi::evWiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 {
-    Serial.println("Connected to WiFi AP");
+    log_n("Connected to WiFi AP");
 }
 
 void SimpleWiFi::evWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
+    IPAddress ip = WiFi.localIP();
+    log_n("IP address %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+    log_n("RSSI %d dBm", WiFi.RSSI());
     connected = true;
 }
 
@@ -129,8 +139,7 @@ void SimpleWiFi::evWiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t in
 {
     if (!connected) return;
     connected = false;
-    Serial.print("Disconnected from WiFi AP, reason: ");
-    Serial.println(info.wifi_sta_disconnected.reason);
+    log_n("Disconnected from WiFi AP, reason: %d", info.wifi_sta_disconnected.reason);
 }
 #endif
 

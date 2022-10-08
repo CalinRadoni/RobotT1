@@ -1,7 +1,7 @@
 #include "wifiConfig.h"
 
 WiFiConfig::WiFiConfig(void)
-    : useDHCP(true)
+    : useStaticIP(false)
     , address(0u)
     , mask(0u)
     , gateway(0u)
@@ -21,7 +21,7 @@ void WiFiConfig::Initialize(void)
     SSID.clear();
     Pass.clear();
 
-    useDHCP = true;
+    useStaticIP = false;
 
     address = (uint32_t)0;
     mask    = (uint32_t)0;

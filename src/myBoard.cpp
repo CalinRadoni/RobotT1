@@ -38,11 +38,11 @@ bool MyBoard::Init_level1(void)
     // --------------------------------------------------------------------------------
     boardConfig->wifi[0].SSID = SSID[0];
     boardConfig->wifi[0].Pass = PASS[0];
-    boardConfig->wifi[0].useDHCP = true;
+    boardConfig->wifi[0].useStaticIP = false;
 
     boardConfig->wifi[1].SSID = SSID[1];
     boardConfig->wifi[1].Pass = PASS[1];
-    boardConfig->wifi[1].useDHCP = true;
+    boardConfig->wifi[1].useStaticIP = false;
 
     ((MyConfig*)boardConfig)->chatID = chatID;
     ((MyConfig*)boardConfig)->botName = botName;

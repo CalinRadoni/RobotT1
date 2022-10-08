@@ -111,7 +111,7 @@ bool BoardConfig::Load(void)
 
         uint32_t flags;
         str = base + "Flags"; flags = prefs.getUInt(str.c_str());
-        wifi[i].useDHCP = (flags & 0x01);
+        wifi[i].useStaticIP = (flags & 0x01);
 
         str = base + "addr";    wifi[i].address = prefs.getUInt(str.c_str());
         str = base + "mask";    wifi[i].mask    = prefs.getUInt(str.c_str());
@@ -151,11 +151,11 @@ bool BoardConfig::Save(void)
         str = base + "Pass"; if (!cPutString(str.c_str(), wifi[i].Pass)) res = false;
 
         uint32_t flags = 0;
-        if (wifi[i].useDHCP) { flags |= 0x01; }
+        if (wifi[i].useStaticIP) { flags |= 0x01; }
 
         str = base + "Flags";   if (!cPutUInt(str.c_str(), flags)) res = false;
         str = base + "addr";    if (!cPutUInt(str.c_str(), wifi[i].address)) res = false;
-        str = base + "mask";    if (!cPutUInt(str.c_str(), wifi[i].mask   )) res = false;
+        str = base + "mask";    if (!cPutUInt(str.c_str(), wifi[i].mask))    res = false;
         str = base + "gateway"; if (!cPutUInt(str.c_str(), wifi[i].gateway)) res = false;
         str = base + "srvDNS1"; if (!cPutUInt(str.c_str(), wifi[i].srvDNS1)) res = false;
         str = base + "srvDNS2"; if (!cPutUInt(str.c_str(), wifi[i].srvDNS2)) res = false;
