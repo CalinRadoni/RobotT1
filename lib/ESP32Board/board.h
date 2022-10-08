@@ -39,7 +39,8 @@ public:
      * @return 1 if Init_level1 returns false
      * @return 2 if Init_level2 returns false
      * @return 3 if Init_level3 returns false
-     * @return 0xE0 if WiFi connection timed out
+     * @return 0xE0 if WiFi not connected
+     * @return 0xE1 if WiFi connection timed out
      * @return 0xFF on success
      */
     unsigned int Initialize(BoardConfig*);

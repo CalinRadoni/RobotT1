@@ -45,19 +45,22 @@ unsigned int Board::Initialize(BoardConfig *cfgIn)
     if(!Init_level2()) { return 2; }
 
     bool timeout = false;
-    while (!simpleWiFi.IsConnected() && !timeout) {
-        if ((millis() - wfs) >= WiFiTimeout) {
-            timeout = true;
-        }
-        else {
-            delay(10);
-            yield();
+    if (wifiConnWIP) {
+        while (!simpleWiFi.IsConnected() && !timeout) {
+            if ((millis() - wfs) >= WiFiTimeout) {
+                timeout = true;
+            }
+            else {
+                delay(10);
+                yield();
+            }
         }
     }
 
     if (!Init_level3()) { return 3; }
 
-    if (timeout) { return 0xE0; }
+    if (!wifiConnWIP) { return 0xE0; }
+    if (timeout)      { return 0xE1; }
     return 0xFF;
 }
 
